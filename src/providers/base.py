@@ -8,5 +8,5 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    def verify_payment(self):
+    def get_payment_status(self, payment_id: str):
         pass
