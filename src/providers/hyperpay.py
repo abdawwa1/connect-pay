@@ -3,6 +3,7 @@ from config import get_settings
 import requests
 import logging
 from src.providers.exceptions import HyperpayException
+from fastapi import HTTPException
 
 logger = logging.getLogger("uvicorn")
 
@@ -16,9 +17,9 @@ class HyperPay(BaseProvider):
     RESULT_CODE_SUCCESSFULLY_CREATED_CHECKOUT = "000.200.100"
 
     def __init__(self, card_type=None):
-        self.base_url = settings.get("base_url")
+        self.base_url = settings.get("hyperpay_base_url")
         self.access_token = settings.get("access_token")
-        self.entity_id = settings.get(f"{card_type}_entity_id")
+        self.entity_id = settings.get(f"{self.validate_card_type(card_type)}_entity_id")
         self.request_log = {}
         self.response_log = {}
 
@@ -100,6 +101,13 @@ class HyperPay(BaseProvider):
     def get_entity_id(self, checkout_id):
         # TODO: Get entity id from DB based on checkout_id
         return "8a8294174b7ecb28014b9699220015ca"
+
+    def validate_card_type(self, card_type):
+        card_types = str(settings.get("card_types")).split(",")
+        if card_type not in card_types:
+            raise HTTPException(status_code=400, detail="Invalid card type")
+        else:
+            return card_type
 
     @property
     def authentication_headers(self):
