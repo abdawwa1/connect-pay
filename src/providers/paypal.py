@@ -22,7 +22,6 @@ class PayPal(BaseProvider):
 
         headers = {
             'Content-Type': 'application/json',
-            'PayPal-Request-Id': '7b92603e-77ed-4896-8e78-5dea2050476b',
             'Authorization': self.authentication_headers,
         }
 
@@ -30,7 +29,6 @@ class PayPal(BaseProvider):
             "intent": "CAPTURE",
             "purchase_units": [
                 {
-                    "reference_id": "d9f80740-38f0-11e8-b467-0ed5f89f718b",
                     "amount": {
                         "currency_code": "USD",
                         "value": "100.00"
@@ -74,8 +72,10 @@ class PayPal(BaseProvider):
         headers = {
             'Authorization': self.authentication_headers,
         }
-
         response = requests.get(url, headers=headers).json()
+        if "status" in response and response.get("status") == "APPROVED":
+            response = self.capture_payment(payment_id)
+
         return response
 
     def auth_paypal(self, client_id, client_secret):
@@ -100,6 +100,23 @@ class PayPal(BaseProvider):
 
     def get_access_token(self):
         return self.auth_paypal(settings.get("paypal_client_id"), settings.get("paypal_client_secret"))
+
+    def capture_payment(self, payment_id):
+        url = self.base_url + f"/v2/checkout/orders/{payment_id}/capture"
+
+        headers = {
+            'Authorization': self.authentication_headers,
+            'Content-Type': 'application/json'
+        }
+        
+        request = {
+            "headers": headers,
+            "url": url
+        }
+
+        logger.info("capturing-payment: {}".format(request))
+        response = requests.post(url, headers=headers).json()
+        return response
 
     @property
     def authentication_headers(self):
