@@ -4,11 +4,17 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from src.providers.connect import Connect
+from sql import models
+from sql.settings import SessionLocal, engine
+
 import logging
 
 logger = logging.getLogger("uvicorn")
 
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+
 
 
 class ProviderRequest(BaseModel):
