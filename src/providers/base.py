@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 
 
 class BaseProvider(ABC):
 
     @abstractmethod
-    def initiate_payment(self):
+    def initiate_payment(self, amount: Decimal, currency: str):
         pass
 
     @abstractmethod

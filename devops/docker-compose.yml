@@ -13,4 +13,4 @@ services:
     ports:
       - "8000:8000"
     external_links:
-     - postgres:postgres
+      - postgres:postgres

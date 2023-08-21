@@ -17,7 +17,7 @@ class PayPal(BaseProvider):
         self.base_url = settings.get("paypal_base_url")
         self.access_token = self.get_access_token()
 
-    def initiate_payment(self):
+    def initiate_payment(self, amount, currency):
         checkout_url = self.base_url + "/v2/checkout/orders"
 
         headers = {
@@ -108,7 +108,7 @@ class PayPal(BaseProvider):
             'Authorization': self.authentication_headers,
             'Content-Type': 'application/json'
         }
-        
+
         request = {
             "headers": headers,
             "url": url

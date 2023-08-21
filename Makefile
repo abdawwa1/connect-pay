@@ -17,7 +17,8 @@ dev-down:      ## Tear down app
 	docker-compose -f ./devops/docker-compose.yml down
 
 create-migration:
-	docker-compose -f ./devops/docker-compose.yml run server alembic revision --autogenerate -m $(migration_message)
+# m : Migration file name
+	docker-compose -f ./devops/docker-compose.yml run server alembic revision --autogenerate -m $(m)
 
 run-migration:
 	docker-compose -f ./devops/docker-compose.yml run server alembic upgrade head

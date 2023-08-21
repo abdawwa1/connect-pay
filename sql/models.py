@@ -1,8 +1,13 @@
 # SQL-ALCHEMY MODELS
-from sqlalchemy import DECIMAL, Column, Integer, String, JSON
-from sqlalchemy.orm import relationship
-
+import enum
+from sqlalchemy import DECIMAL, Column, Integer, String, JSON, Enum
 from .settings import Base
+
+
+class PaymentStatus(enum.Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
 
 
 class Payment(Base):
@@ -13,3 +18,5 @@ class Payment(Base):
     request = Column(JSON)
     response = Column(JSON)
     amount = Column(DECIMAL)
+    status = Column(Enum(PaymentStatus))
+
