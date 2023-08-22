@@ -4,6 +4,10 @@ import requests
 from fastapi import HTTPException
 
 from config import get_settings
+from sql.models import PaymentStatus
+from sql.paypal_crud import create_payment, update_payment
+from sql.schemas import PaymentCreate, PaymentSuccessUpdate
+from sql.settings import SessionLocal
 from src.providers.base import BaseProvider
 
 logger = logging.getLogger("uvicorn")
@@ -12,10 +16,13 @@ settings = get_settings()
 
 class PayPal(BaseProvider):
     DEFAULT_CURRENCY = "USD"
+    db = SessionLocal()
 
     def __init__(self):
         self.base_url = settings.get("paypal_base_url")
         self.access_token = self.get_access_token()
+        self.data = {}
+        self.response_data = {}
 
     def initiate_payment(self, amount, currency):
         checkout_url = self.base_url + "/v2/checkout/orders"
@@ -25,7 +32,7 @@ class PayPal(BaseProvider):
             'Authorization': self.authentication_headers,
         }
 
-        data = {
+        self.data = {
             "intent": "CAPTURE",
             "purchase_units": [
                 {
@@ -52,19 +59,20 @@ class PayPal(BaseProvider):
             }
         }
         try:
-            response_data = requests.post(checkout_url, headers=headers, data=json.dumps(data)).json()
+            self.response_data = requests.post(checkout_url, headers=headers, data=json.dumps(self.data)).json()
+            self.create_payment_in_db()
         except requests.exceptions.RequestException as error:
             raise HTTPException(status_code=500, detail=error)
 
-        if "PAYER_ACTION_REQUIRED" in response_data:
+        if "PAYER_ACTION_REQUIRED" in self.response_data:
             response = {
-                "id": response_data["id"],
-                "status": response_data["status"],
-                "links": response_data["links"][1]
+                "id": self.response_data["id"],
+                "status": self.response_data["status"],
+                "links": self.response_data["links"][1]
             }
             return response
 
-        return response_data
+        return self.response_data
 
     def get_payment_status(self, payment_id: str):
         url = self.base_url + f"/v2/checkout/orders/{payment_id}"
@@ -73,7 +81,9 @@ class PayPal(BaseProvider):
             'Authorization': self.authentication_headers,
         }
         response = requests.get(url, headers=headers).json()
+
         if "status" in response and response.get("status") == "APPROVED":
+            self.update_payment_in_db(payment_id)
             response = self.capture_payment(payment_id)
 
         return response
@@ -124,3 +134,27 @@ class PayPal(BaseProvider):
         Return the authentication headers.
         """
         return "Bearer {}".format(self.access_token)
+
+    def create_payment_in_db(self):
+        from decimal import Decimal
+        return create_payment(
+            self.db,
+            PaymentCreate(
+                integrator="PayPal",
+                request=json.dumps(self.data, default=str),
+                response=json.dumps(self.response_data, default=str),
+                status=PaymentStatus.PENDING.value,
+                amount=Decimal(self.data.get("purchase_units")[0].get("amount").get("value"))
+            )
+        )
+
+    def update_payment_in_db(self, payment_id):
+        update_payment(
+            self.db,
+            payment_id,
+            PaymentSuccessUpdate(
+                integrator="PayPal",
+                response=json.dumps(self.response_data, default=str),
+                status=PaymentStatus.SUCCESS.value
+            )
+        )
