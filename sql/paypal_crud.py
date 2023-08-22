@@ -21,10 +21,6 @@ def create_payment(db: Session, payment: schemas.PaymentCreate):
 
 
 def update_payment(db: Session, payment_checkout_id: str, payment: schemas.PaymentSuccessUpdate):
-    from main import logger
-    logger.info(payment_checkout_id)
-    logger.info(db.query(models.Payment).filter(
-        models.Payment.response.op("->>")("id") == payment_checkout_id))
     db_payment = db.query(models.Payment).filter(
         models.Payment.response.op("->>")("id") == payment_checkout_id and
         models.Payment.integrator == "PayPal"
