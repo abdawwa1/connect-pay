@@ -20,5 +20,5 @@ create-migration:
 # m : Migration file name
 	docker-compose -f ./devops/docker-compose.yml run server alembic revision --autogenerate -m $(m)
 
-run-migration:
+migrate:
 	docker-compose -f ./devops/docker-compose.yml run server alembic upgrade head

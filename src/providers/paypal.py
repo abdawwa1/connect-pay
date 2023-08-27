@@ -4,6 +4,7 @@ import requests
 from fastapi import HTTPException
 
 from config import get_settings
+from main import PaypalRequest
 from sql.models import PaymentStatus
 from sql.paypal_crud import create_payment, update_payment
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
@@ -17,6 +18,7 @@ settings = get_settings()
 class PayPal(BaseProvider):
     DEFAULT_CURRENCY = "USD"
     db = SessionLocal()
+    model = PaypalRequest
 
     def __init__(self):
         self.base_url = settings.get("paypal_base_url")
@@ -80,13 +82,13 @@ class PayPal(BaseProvider):
         headers = {
             'Authorization': self.authentication_headers,
         }
-        response = requests.get(url, headers=headers).json()
+        self.response_data = requests.get(url, headers=headers).json()
 
-        if "status" in response and response.get("status") == "APPROVED":
+        if "status" in self.response_data and self.response_data.get("status") == "APPROVED":
+            self.response_data = self.capture_payment(payment_id)
             self.update_payment_in_db(payment_id)
-            response = self.capture_payment(payment_id)
 
-        return response
+        return self.response_data
 
     def auth_paypal(self, client_id, client_secret):
         from requests.auth import HTTPBasicAuth
