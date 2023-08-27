@@ -4,7 +4,6 @@ import requests
 from fastapi import HTTPException
 
 from config import get_settings
-from main import PaypalRequest
 from sql.models import PaymentStatus
 from sql.paypal_crud import create_payment, update_payment
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
@@ -18,7 +17,6 @@ settings = get_settings()
 class PayPal(BaseProvider):
     DEFAULT_CURRENCY = "USD"
     db = SessionLocal()
-    model = PaypalRequest
 
     def __init__(self):
         self.base_url = settings.get("paypal_base_url")
