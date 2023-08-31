@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="col-12">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Edit {{ model_view.name }}</h3>
+        </div>
+        <div class="card-body border-bottom py-3">
+            <form action="{{ request.url }}" method="POST" enctype="multipart/form-data">
+                <fieldset class="form-fieldset">
+                    {% for field in form %}
+                    <div class="mb-3 form-group row">
+                        {{ field.label(class_="form-label col-sm-2 col-form-label") }}
+                        <div class="col-sm-10">
+                            {% if field.errors %}
+                            {{ field(class_="form-control is-invalid") }}
+                            {% else %}
+                            {{ field() }}
+                            {% endif %}
+                            {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </fieldset>
+                <fieldset class="form-fieldset hyper-pay d-none">
+                    <div class="mb-3 form-group row">
+                        <label for="hyperpay-base-url" class="form-label col-sm-2 col-form-label">Base URL</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyperpay-base-url" name="hyperpay-base-url" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="hyper-pay-token" class="form-label col-sm-2 col-form-label">Token</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyper-pay-token" name="hyper-pay-token" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="hyper-pay-visa-entity" class="form-label col-sm-2 col-form-label">VISA Entity
+                            ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyper-pay-visa-entity" name="hyper-pay-visa-entity"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="hyper-pay-mastercard-entity" class="form-label col-sm-2 col-form-label">Master Card
+                            Entity ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyper-pay-mastercard-entity" name="hyper-pay-mastercard-entity"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="hyper-pay-mada-entity" class="form-label col-sm-2 col-form-label">Mada Entity
+                            ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyper-pay-mada-entity" name="hyper-pay-mada-entity"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="hyper-pay-applepay-entity" class="form-label col-sm-2 col-form-label">Apple Pay
+                            Entity ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="hyper-pay-applepay-entity" name="hyper-pay-applepay-entity"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label class="form-label col-sm-2 col-form-label">Card Type</label>
+                        <div class="col-sm-10">
+                            <div class="form-check">
+                                <input type="checkbox" id="visa" name="card_type" value="visa" class="form-check-input">
+                                <label for="visa" class="form-check-label">Visa</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="master" name="card_type" value="master"
+                                       class="form-check-input">
+                                <label for="master" class="form-check-label">Master</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="mada" name="card_type" value="mada" class="form-check-input">
+                                <label for="mada" class="form-check-label">Mada</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="applepay" name="card_type" value="applepay"
+                                       class="form-check-input">
+                                <label for="applepay" class="form-check-label">Apple Pay</label>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="form-fieldset pay-pal d-none">
+                    <div class="mb-3 form-group row">
+                        <label for="paypal-base-url" class="form-label col-sm-2 col-form-label">Base URL</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="paypal-base-url" name="paypal-base-url" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="paypal-client-id" class="form-label col-sm-2 col-form-label">Client ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="paypal-client-id" name="paypal-client-id" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-group row">
+                        <label for="paypal-client-secret" class="form-label col-sm-2 col-form-label">Client
+                            Secret</label>
+                        <div class="col-sm-10">
+                            <input type="text" id="paypal-client-secret" name="paypal-client-secret"
+                                   class="form-control">
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="row">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                    {% endif %}
+                    <div class="col-md-2">
+                        <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
+                            Cancel
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group flex-wrap" data-toggle="buttons">
+                            <input type="submit" name="save" value="Save" class="btn">
+                            <input type="submit" name="save" value="Save and continue editing" class="btn">
+                            {% if model_view.save_as %}
+                            <input type="submit" name="save" value="Save as new" class="btn">
+                            {% else %}
+                            <input type="submit" name="save" value="Save and add another" class="btn">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block tail %}
+<script>
+    function removeEmptyValues(obj) {
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key) && (obj[key] === null || obj[key] === undefined || obj[key] === "")) {
+                delete obj[key];
+            }
+        }
+        return obj
+    }
+
+    function formToJSON(f) {
+        var form_data = $(f).serializeArray();
+        var data = {};
+        $(form_data).each(function () {
+            if (data[this.name] !== undefined) {
+                if (!Array.isArray(data[this.name])) {
+                    data[this.name] = [data[this.name]];
+                }
+                data[this.name].push(this.value);
+            } else {
+                data[this.name] = this.value;
+            }
+        });
+
+        return removeEmptyValues(data);
+    }
+
+    $(document).ready(function () {
+        $("[for=config_data]").addClass("d-none")
+        $('#config_data').addClass("d-none")
+        switch ($('#providers').val()) {
+            case "PayPal" :
+                $('.pay-pal').removeClass("d-none")
+                var inputs = $('.pay-pal').find('input')
+                var saved_data = JSON.parse($('#config_data').val())
+                $.each(inputs, function (index, value) {
+                    $('#' + value.id.toString()).val(saved_data[value.id.toString()])
+                });
+                break;
+            case "HyperPay":
+                $('.hyper-pay').removeClass("d-none")
+                var inputs = $('.hyper-pay').find('input')
+                var saved_data = JSON.parse($('#config_data').val())
+                $.each(inputs, function (index, value) {
+                    if ($('#' + value.id.toString()).attr('type') != "checkbox") {
+                        $('#' + value.id.toString()).val(saved_data[value.id.toString()])
+                    } else if (saved_data['card_type'].indexOf(value.id) > -1) {
+                        $('#' + value.id.toString()).attr('checked', true)
+                    }
+                });
+                break;
+        }
+        $('#providers, .hyper-pay').on('change', function () {
+            if ($('#providers').val() === 'PayPal') {
+                $('.pay-pal').removeClass("d-none")
+                $('.hyper-pay').addClass("d-none")
+
+            } else {
+                $('.hyper-pay').removeClass("d-none")
+                $('.pay-pal').addClass("d-none")
+            }
+        });
+    });
+
+    $(document).on("submit", "form", function () {
+        var config_data = formToJSON(this);
+
+        delete config_data["providers"]
+        delete config_data["config_data"]
+        delete config_data["enabled"]
+        $('#config_data').val(JSON.stringify(config_data))
+
+        return true;
+    });
+
+</script>
+{% endblock %}

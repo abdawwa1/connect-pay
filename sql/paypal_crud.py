@@ -27,3 +27,9 @@ def update_payment(db: Session, payment_checkout_id: str, payment: schemas.Payme
     ).update({"integrator": payment.integrator, "response": payment.response, "status": payment.status})
     db.commit()
     return db_payment
+
+
+def paypal_config(db: Session):
+    return db.query(models.IntegratorConfig).filter(
+        models.IntegratorConfig.providers == "PayPal" and models.IntegratorConfig.enabled == True
+    ).first()

@@ -16,7 +16,7 @@ dev-run:       ## Run app locally
 dev-down:      ## Tear down app
 	docker-compose -f ./devops/docker-compose.yml down
 
-create-migration:
+migration:
 # m : Migration file name
 	docker-compose -f ./devops/docker-compose.yml run server alembic revision --autogenerate -m $(m)
 

@@ -1,46 +1,59 @@
-from decimal import Decimal
-from typing import Optional
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
+
+from sql.hyperpay_crud import hyperpay_config
+from sql.paypal_crud import paypal_config
 from src.providers.connect import Connect
 
 from sqladmin import Admin
-from sql.models import Payment
+from sql.models import Payment, IntegratorConfig
 from sqladmin import ModelView
-from sql.settings import engine
+from sql.settings import engine, SessionLocal
 
 import logging
+
+from src.providers.serializers import HyperPaySerializer, PaypalSerializer
 
 logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
 
-class ProviderRequest(BaseModel):
-    provider_name: str
-    card_type: Optional[str] = None
-    amount: Decimal
-    currency: str
-
-
-@app.post("/provider/checkout")
-async def process_provider(data: ProviderRequest):
+@app.post("/{integrator}/checkout")
+async def process_provider(integrator: str, request: Request):
     provider = Connect()
+    data = await request.json()
 
     client = None
-    if data.provider_name == "HyperPay":
-        if not data.card_type:
-            raise HTTPException(status_code=400, detail="Card type is required")
-        client = provider.get_provider(data.provider_name, data.card_type)
-    elif data.provider_name == "PayPal":
-        if data.card_type:
-            raise HTTPException(status_code=400, detail="Remove Card Type")
-        client = provider.get_provider(data.provider_name)
+    if integrator == "HyperPay":
+        if not hyperpay_config(SessionLocal()):
+            raise HTTPException(status_code=400, detail="No configurations were added please check portal!")
+        try:
+            serializer = HyperPaySerializer(**data)
+        except Exception:
+            raise HTTPException(status_code=400)
+
+        if not hyperpay_config(SessionLocal()).enabled:
+            raise HTTPException(status_code=400, detail="Provider not enabled please check portal!")
+
+        client = provider.get_provider(integrator, serializer.card_type)
+
+    elif integrator == "PayPal":
+        if not paypal_config(SessionLocal()):
+            raise HTTPException(status_code=400, detail="No configurations were added please check portal!")
+        try:
+            PaypalSerializer(**data)
+        except Exception:
+            raise HTTPException(status_code=400)
+
+        if not paypal_config(SessionLocal()).enabled:
+            raise HTTPException(status_code=400, detail="Provider not enabled please check portal!")
+        client = provider.get_provider(integrator)
 
     if not client:
         raise HTTPException(status_code=400, detail="Provider name not found")
 
-    return client.initiate_payment(amount=data.amount, currency=data.currency)
+    return client.initiate_payment(amount=data.get("amount"), currency=data.get("currency"))
 
 
 class PaymentData(BaseModel):
@@ -70,6 +83,16 @@ admin = Admin(app, engine)
 class PaymentAdmin(ModelView, model=Payment):
     column_list = [Payment.id, Payment.integrator, Payment.status]
     column_sortable_list = [Payment.id, Payment.integrator, Payment.status]
+    icon = "fa fa-bars"
+
+
+class IntegratorConfigAdmin(ModelView, model=IntegratorConfig):
+    column_list = [IntegratorConfig.id, IntegratorConfig.providers, IntegratorConfig.enabled]
+    column_sortable_list = [IntegratorConfig.id, IntegratorConfig.providers, IntegratorConfig.enabled]
+    icon = "fa fa-plus-circle"
+    create_template = "integrator_create.html"
+    edit_template = "integrator_edit.html"
 
 
 admin.add_view(PaymentAdmin)
+admin.add_view(IntegratorConfigAdmin)

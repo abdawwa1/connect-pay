@@ -5,13 +5,14 @@ from fastapi import HTTPException
 
 from config import get_settings
 from sql.models import PaymentStatus
-from sql.paypal_crud import create_payment, update_payment
+from sql.paypal_crud import create_payment, update_payment, paypal_config
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
 from sql.settings import SessionLocal
 from src.providers.base import BaseProvider
 
 logger = logging.getLogger("uvicorn")
 settings = get_settings()
+integrator = paypal_config(SessionLocal())
 
 
 class PayPal(BaseProvider):
@@ -19,7 +20,7 @@ class PayPal(BaseProvider):
     db = SessionLocal()
 
     def __init__(self):
-        self.base_url = settings.get("paypal_base_url")
+        self.base_url = integrator.config_data.get("paypal-base-url")
         self.access_token = self.get_access_token()
         self.data = {}
         self.response_data = {}
@@ -59,8 +60,12 @@ class PayPal(BaseProvider):
             }
         }
         try:
+            logger.info("******************************************")
+            logger.info("initiate-payment-request: {}".format(self.data))
             self.response_data = requests.post(checkout_url, headers=headers, data=json.dumps(self.data)).json()
             self.create_payment_in_db()
+            logger.info("******************************************")
+            logger.info("paypal-response: {}".format(self.response_data))
         except requests.exceptions.RequestException as error:
             raise HTTPException(status_code=500, detail=error)
 
@@ -109,7 +114,7 @@ class PayPal(BaseProvider):
         raise HTTPException(status_code=400, detail=response_data)
 
     def get_access_token(self):
-        return self.auth_paypal(settings.get("paypal_client_id"), settings.get("paypal_client_secret"))
+        return self.auth_paypal(integrator.config_data.get("paypal-client-id"), integrator.config_data.get("paypal-client-secret"))
 
     def capture_payment(self, payment_id):
         url = self.base_url + f"/v2/checkout/orders/{payment_id}/capture"

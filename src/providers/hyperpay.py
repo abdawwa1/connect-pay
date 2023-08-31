@@ -6,7 +6,7 @@ import requests
 import logging
 from src.providers.exceptions import HyperpayException
 from fastapi import HTTPException, Depends
-from sql.hyperpay_crud import create_payment, get_payment, update_payment
+from sql.hyperpay_crud import create_payment, get_payment, update_payment, hyperpay_config
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
 from sql.models import PaymentStatus
 from sql.settings import SessionLocal
@@ -14,6 +14,7 @@ from sql.settings import SessionLocal
 logger = logging.getLogger("uvicorn")
 
 settings = get_settings()
+integrator = hyperpay_config(SessionLocal())
 
 
 class HyperPay(BaseProvider):
@@ -24,9 +25,9 @@ class HyperPay(BaseProvider):
     db = SessionLocal()
 
     def __init__(self, card_type=None):
-        self.base_url = settings.get("hyperpay_base_url")
-        self.access_token = settings.get("access_token")
-        self.entity_id = settings.get(f"{self.validate_card_type(card_type)}_entity_id")
+        self.base_url = integrator.config_data.get("hyperpay-base-url")
+        self.access_token = integrator.config_data.get("hyper-pay-token")
+        self.entity_id = integrator.config_data.get(f"hyper-pay-{self.validate_card_type(card_type)}-entity")
         self.request_log = {}
         self.response_log = {}
 
@@ -123,7 +124,7 @@ class HyperPay(BaseProvider):
             return payment
 
     def validate_card_type(self, card_type):
-        card_types = str(settings.get("card_types")).split(",")
+        card_types = str(integrator.config_data.get("card_type")).split(",")
         if card_type not in card_types and card_types == "ignore":
             raise HTTPException(status_code=400, detail="Invalid card type")
         else:

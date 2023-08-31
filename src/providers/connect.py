@@ -7,6 +7,7 @@ logger = logging.getLogger("uvicorn")
 
 
 class Connect:
+
     @staticmethod
     def get_provider(provider="dummy", *args, **kwargs) -> BaseProvider:
         if provider == "HyperPay":
