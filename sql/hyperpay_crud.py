@@ -28,7 +28,7 @@ def update_payment(db: Session, payment_checkout_id: str, payment: schemas.Payme
     return db_payment
 
 
-def hyperpay_config(db: Session):
+def hyperpay_config(db: Session, user_id: int):
     return db.query(models.IntegratorConfig).filter(
-        models.IntegratorConfig.providers == "HyperPay" and models.IntegratorConfig.enabled == True
+        models.IntegratorConfig.providers == "HyperPay" and models.IntegratorConfig.user_id == user_id
     ).first()

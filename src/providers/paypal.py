@@ -12,15 +12,15 @@ from src.providers.base import BaseProvider
 
 logger = logging.getLogger("uvicorn")
 settings = get_settings()
-integrator = paypal_config(SessionLocal())
 
 
 class PayPal(BaseProvider):
     DEFAULT_CURRENCY = "USD"
     db = SessionLocal()
 
-    def __init__(self):
-        self.base_url = integrator.config_data.get("paypal-base-url")
+    def __init__(self, integrator):
+        self.integrator_data = integrator
+        self.base_url = integrator.get("config_data").get("paypal-base-url")
         self.access_token = self.get_access_token()
         self.data = {}
         self.response_data = {}
@@ -114,7 +114,8 @@ class PayPal(BaseProvider):
         raise HTTPException(status_code=400, detail=response_data)
 
     def get_access_token(self):
-        return self.auth_paypal(integrator.config_data.get("paypal-client-id"), integrator.config_data.get("paypal-client-secret"))
+        return self.auth_paypal(self.integrator_data.get("config_data").get("paypal-client-id"),
+                                self.integrator_data.get("config_data").get("paypal-client-secret"))
 
     def capture_payment(self, payment_id):
         url = self.base_url + f"/v2/checkout/orders/{payment_id}/capture"

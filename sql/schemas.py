@@ -6,6 +6,8 @@ from enum import Enum
 from decimal import Decimal
 from pydantic import BaseModel, Json
 
+from sql.models import Providers
+
 
 class PaymentBase(BaseModel):
     integrator: str
@@ -27,3 +29,11 @@ class PaymentCreate(PaymentBase):
 class PaymentSuccessUpdate(PaymentBase):
     response: Json
     status: PaymentEnum = PaymentEnum.SUCCESS
+
+
+class UserBase(BaseModel):
+    user_name: str
+
+
+class UserCreate(UserBase):
+    external_id: str

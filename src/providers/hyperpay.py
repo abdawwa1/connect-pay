@@ -14,7 +14,6 @@ from sql.settings import SessionLocal
 logger = logging.getLogger("uvicorn")
 
 settings = get_settings()
-integrator = hyperpay_config(SessionLocal())
 
 
 class HyperPay(BaseProvider):
@@ -24,10 +23,12 @@ class HyperPay(BaseProvider):
     RESULT_CODE_SUCCESSFULLY_CREATED_CHECKOUT = "000.200.100"
     db = SessionLocal()
 
-    def __init__(self, card_type=None):
-        self.base_url = integrator.config_data.get("hyperpay-base-url")
-        self.access_token = integrator.config_data.get("hyper-pay-token")
-        self.entity_id = integrator.config_data.get(f"hyper-pay-{self.validate_card_type(card_type)}-entity")
+    def __init__(self, integrator, card_type=None):
+
+        self.config_data = integrator.get("config_data")
+        self.base_url = self.config_data.get("hyper-pay-base-url")
+        self.access_token = self.config_data.get("hyper-pay-token")
+        self.entity_id = self.config_data.get(f"hyper-pay-{self.validate_card_type(card_type)}-entity-id")
         self.request_log = {}
         self.response_log = {}
 
@@ -124,11 +125,16 @@ class HyperPay(BaseProvider):
             return payment
 
     def validate_card_type(self, card_type):
-        card_types = str(integrator.config_data.get("card_type")).split(",")
-        if card_type not in card_types and card_types == "ignore":
-            raise HTTPException(status_code=400, detail="Invalid card type")
+        card_type_value, = card_type
+
+        card_types = self.config_data.get("card_type")
+        if card_type_value == "ignore":
+            return card_type_value
+        if card_type_value in card_types and self.config_data.get(f"hyper-pay-{card_type_value}-entity-id"):
+            return card_type_value
         else:
-            return card_type
+            raise HTTPException(status_code=400,
+                                detail=f"Invalid card type! Make sure you enabled {card_type_value} & added Entity id")
 
     @property
     def authentication_headers(self):

@@ -11,6 +11,6 @@ class Connect:
     @staticmethod
     def get_provider(provider="dummy", *args, **kwargs) -> BaseProvider:
         if provider == "HyperPay":
-            return HyperPay(*args)
+            return HyperPay(card_type=args, integrator=kwargs)
         elif provider == "PayPal":
-            return PayPal()
+            return PayPal(kwargs)

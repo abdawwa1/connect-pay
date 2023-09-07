@@ -15,8 +15,9 @@ requests = "^2.31.0"
 sqlalchemy = "^2.0.20"
 psycopg2-binary = "^2.9.7"
 alembic = "^1.11.3"
-sqladmin = "^0.14.1"
 itsdangerous = "^2.1.2"
+python-jose = "^3.3.0"
+passlib = "^1.7.4"
 
 
 [build-system]
