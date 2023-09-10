@@ -14,7 +14,7 @@ from sql.settings import SessionLocal
 
 import logging
 
-from src.providers.serializers import HyperPaySerializer, PaypalSerializer, PaymentData, IntegratorCreate
+from src.providers.serializers import HyperPaySerializer, PaypalSerializer, IntegratorCreate
 
 logger = logging.getLogger("uvicorn")
 settings = get_settings()
@@ -114,7 +114,7 @@ async def process_provider(integrator: str, request: Request):
     data = await request.json()
 
     client = None
-    if integrator == "HyperPay":
+    if integrator == "hyperpay":
         hyperpay_settings = hyperpay_config(SessionLocal(), request.user.id)
         if not hyperpay_settings:
             raise HTTPException(status_code=400, detail="No configurations were added please check portal!")
@@ -128,7 +128,7 @@ async def process_provider(integrator: str, request: Request):
 
         client = provider.get_provider(integrator, serializer.card_type, config_data=hyperpay_settings.config_data)
 
-    elif integrator == "PayPal":
+    elif integrator == "paypal":
         paypal_settings = paypal_config(SessionLocal(), request.user.id)
 
         if not paypal_settings:
@@ -149,10 +149,10 @@ async def process_provider(integrator: str, request: Request):
     return client.initiate_payment(amount=data.get("amount"), currency=data.get("currency"))
 
 
-@app.get("/{provider}/payment/status")
-async def payment_result(provider: str, data: PaymentData, request: Request):
+@app.get("/{provider}/payment/status/{checkout_id}")
+async def payment_result(provider: str, checkout_id: str, request: Request):
     client = None
-    if provider == "HyperPay":
+    if provider == "hyperpay":
         hyperpay_settings = hyperpay_config(SessionLocal(), request.user.id)
         if not hyperpay_settings:
             raise HTTPException(status_code=400, detail="No configurations were added please check portal!")
@@ -162,7 +162,7 @@ async def payment_result(provider: str, data: PaymentData, request: Request):
 
         client = Connect().get_provider(provider, "ignore",
                                         config_data=hyperpay_settings.config_data)  # Todo: Ignore is just temporary for logic fix
-    elif provider == "PayPal":
+    elif provider == "paypal":
         paypal_settings = paypal_config(SessionLocal(), request.user.id)
 
         if not paypal_settings:
@@ -176,4 +176,4 @@ async def payment_result(provider: str, data: PaymentData, request: Request):
     if not client:
         raise HTTPException(status_code=400, detail="Provider name not found")
 
-    return client.get_payment_status(data.checkout_id)
+    return client.get_payment_status(checkout_id)

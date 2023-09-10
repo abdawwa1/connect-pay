@@ -80,7 +80,8 @@ class PayPal(BaseProvider):
         return self.response_data
 
     def get_payment_status(self, payment_id: str):
-        url = self.base_url + f"/v2/checkout/orders/{payment_id}"
+        payment_id_upper = payment_id.upper()
+        url = self.base_url + f"/v2/checkout/orders/{payment_id_upper}"
 
         headers = {
             'Authorization': self.authentication_headers,
@@ -88,8 +89,8 @@ class PayPal(BaseProvider):
         self.response_data = requests.get(url, headers=headers).json()
 
         if "status" in self.response_data and self.response_data.get("status") == "APPROVED":
-            self.response_data = self.capture_payment(payment_id)
-            self.update_payment_in_db(payment_id)
+            self.response_data = self.capture_payment(payment_id_upper)
+            self.update_payment_in_db(payment_id_upper)
 
         return self.response_data
 

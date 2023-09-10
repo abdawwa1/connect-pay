@@ -14,10 +14,6 @@ class PaypalSerializer(BaseModel):
     currency: str
 
 
-class PaymentData(BaseModel):
-    checkout_id: str
-
-
 class Integrator(BaseModel):
     providers: Providers
     enabled: bool
