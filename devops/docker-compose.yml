@@ -1,4 +1,9 @@
 version: '3.7'
+
+networks:
+  apifort:
+    external: false
+
 services:
   server:
     image: payment-service
@@ -12,5 +17,7 @@ services:
       - "8000"
     ports:
       - "8000:8000"
+    networks:
+      - apifort
     external_links:
       - postgres:postgres

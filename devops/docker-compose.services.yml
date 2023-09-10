@@ -1,4 +1,8 @@
 version: '3.7'
+networks:
+  apifort:
+    external: false
+
 services:
   postgres:
     image: postgres:14.1
@@ -9,7 +13,8 @@ services:
       POSTGRES_HOST_AUTH_METHOD: "trust"
     ports:
       - 5432:5432
-    expose:
-      - 5432
+
+    networks:
+      - apifort
     volumes:
       - ./data-test/pgdata:/var/lib/postgresql/data

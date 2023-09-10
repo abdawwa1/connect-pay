@@ -1,7 +1,6 @@
-from fastapi import HTTPException
 from jose import jwt, exceptions
 from starlette.authentication import (
-    AuthenticationBackend, AuthenticationError, BaseUser, AuthCredentials)
+    AuthenticationBackend, AuthenticationError, BaseUser, AuthCredentials, UnauthenticatedUser)
 from typing import Optional, Tuple, Union
 from sql import users_crud
 from sql.schemas import UserCreate
@@ -24,6 +23,12 @@ class JWTUser(BaseUser):
 
 
 class KCTokenBackend(AuthenticationBackend):
+    execluded_paths = [
+        "/docs",
+        "/redoc",
+        "/openapi.json"
+    ]
+
     def __init__(self,
                  secret_key: str,
                  algorithm: str = 'RS256',
@@ -67,6 +72,9 @@ class KCTokenBackend(AuthenticationBackend):
             return user
 
     async def authenticate(self, request) -> Union[None, Tuple[AuthCredentials, BaseUser]]:
+        if request.url.path in self.execluded_paths:
+            return AuthCredentials(), UnauthenticatedUser()
+
         if "Authorization" not in request.headers:
             raise AuthenticationError("Unauthorized")
 

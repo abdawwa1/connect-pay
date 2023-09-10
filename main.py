@@ -1,5 +1,3 @@
-import json
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware import Middleware
@@ -7,10 +5,9 @@ from starlette.middleware.authentication import AuthenticationMiddleware
 
 from sql import integrator_crud
 from sql.hyperpay_crud import hyperpay_config
-from sql.integrator_crud import get_integrator
 from sql.paypal_crud import paypal_config
 from sql.users_crud import get_user
-from src.backend import KCTokenBackend
+from src.middlewares import KCTokenBackend
 from src.providers.connect import Connect
 from config import get_settings
 from sql.settings import SessionLocal
@@ -35,11 +32,16 @@ middleware = [
 app = FastAPI(middleware=middleware, debug=True)
 
 
+@app.get("/integrator/", status_code=200)
+async def get_integrator(request: Request):
+    return integrator_crud.get_integrators(SessionLocal(), request.user.id)
+
+
 @app.post("/integrator/create", status_code=201)
 async def create_integrator(integrator: IntegratorCreate, request: Request):
     db_session = SessionLocal()
     user = get_user(db_session, request.user.external_id)
-    integrator_record = get_integrator(db_session, integrator.providers.value, user.id)
+    integrator_record = integrator_crud.get_integrator(db_session, integrator.providers.value, user.id)
 
     if integrator_record:
         raise HTTPException(status_code=400, detail="Config exists")
@@ -56,6 +58,52 @@ async def create_integrator(integrator: IntegratorCreate, request: Request):
         return JSONResponse(
             content={
                 "message": "Successfully created config!"
+            }
+        )
+
+
+@app.put("/integrator/update/{pk}", status_code=200)
+async def update_integrator(integrator: IntegratorCreate, pk: int, request: Request):
+    db_session = SessionLocal()
+    user = get_user(db_session, request.user.external_id)
+    integrator_record = integrator_crud.get_integrator_by_id(db_session, pk, user.id)
+
+    if not integrator_record:
+        raise HTTPException(status_code=400, detail="Config not found !")
+    else:
+        integrator_crud.update_integrator(
+            db_session,
+            pk,
+            IntegratorCreate(
+                providers=integrator.providers.value,
+                enabled=integrator.enabled,
+                config_data=integrator.config_data,
+            ),
+        )
+        return JSONResponse(
+            content={
+                "message": "Successfully updated config!"
+            }
+        )
+
+
+@app.delete("/integrator/delete/{pk}", status_code=200)
+async def delete_integrator(pk: int, request: Request):
+    db_session = SessionLocal()
+    user = get_user(db_session, request.user.external_id)
+    integrator_record = integrator_crud.get_integrator_by_id(db_session, pk, user.id)
+
+    if not integrator_record:
+        raise HTTPException(status_code=400, detail="Config not found !")
+    else:
+        integrator_crud.delete_integrator(
+            db_session,
+            pk,
+            user.id
+        )
+        return JSONResponse(
+            content={
+                "message": "Successfully deleted config!"
             }
         )
 
