@@ -75,11 +75,12 @@ class HyperPay(BaseProvider):
 
     def get_payment_status(self, payment_id):
         import re
+        upper_payment_id = payment_id.split(".")[0].upper() + "." + payment_id.split(".")[1]
         SUCCESS_CODES_REGEX = re.compile(r"^(000\.000\.|000\.100\.1|000\.[36])")
-        resource_path = "/v1/checkouts/{}/payment".format(payment_id)
+        resource_path = "/v1/checkouts/{}/payment".format(upper_payment_id)
         from urllib.parse import urlencode
         payment_status_api_url = "{}?{}".format(
-            self.base_url + resource_path, urlencode({"entityId": self.get_entity_id(payment_id)})
+            self.base_url + resource_path, urlencode({"entityId": self.get_entity_id(upper_payment_id)})
         )
 
         # log the request
@@ -110,7 +111,7 @@ class HyperPay(BaseProvider):
         result_code = response_data["result"]["code"]
 
         if SUCCESS_CODES_REGEX.search(result_code):
-            self.update_payment_in_db(payment_id)
+            self.update_payment_in_db(upper_payment_id)
 
         return response_data
 
