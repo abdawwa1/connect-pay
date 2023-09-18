@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+from sql import models, schemas
 
 
 def get_payment(db: Session, payment_checkout_id: str):
@@ -12,7 +12,7 @@ def get_payment(db: Session, payment_checkout_id: str):
 
 def create_payment(db: Session, payment: schemas.PaymentCreate):
     db_payment = models.Payment(integrator=payment.integrator, request=payment.request, response=payment.response,
-                                status=payment.status, amount=payment.amount)
+                                status=payment.status, amount=payment.amount, user_id=payment.user_id)
     db.add(db_payment)
     db.commit()
     db.refresh(db_payment)

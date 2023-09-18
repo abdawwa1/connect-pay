@@ -2,10 +2,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
-from sql import integrator_crud
-from sql.hyperpay_crud import hyperpay_config
-from sql.paypal_crud import paypal_config
+from sql.orms import integrator_crud, payment_crud
+from sql.orms.hyperpay_crud import hyperpay_config
+from sql.orms.paypal_crud import paypal_config
 from sql.users_crud import get_user
 from src.middlewares import KCTokenBackend
 from src.providers.connect import Connect
@@ -31,10 +32,25 @@ middleware = [
 ]
 app = FastAPI(middleware=middleware, debug=True)
 
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/integrator/", status_code=200)
 async def get_integrator(request: Request):
     return integrator_crud.get_integrators(SessionLocal(), request.user.id)
+
+
+@app.get("/payments/", status_code=200)
+async def get_payments(request: Request):
+    return payment_crud.get_user_payments(SessionLocal(), request.user.id)
 
 
 @app.post("/integrator/create", status_code=201)
@@ -125,8 +141,8 @@ async def process_provider(integrator: str, request: Request):
 
         if not hyperpay_settings.enabled:
             raise HTTPException(status_code=400, detail="Provider not enabled please check portal!")
-
-        client = provider.get_provider(integrator, serializer.card_type, config_data=hyperpay_settings.config_data)
+        client = provider.get_provider(integrator, serializer.card_type, config_data=hyperpay_settings.config_data,
+                                       user_id=hyperpay_settings.user_id)
 
     elif integrator == "paypal":
         paypal_settings = paypal_config(SessionLocal(), request.user.id)
@@ -141,7 +157,8 @@ async def process_provider(integrator: str, request: Request):
         if not paypal_settings.enabled:
             raise HTTPException(status_code=400, detail="Provider not enabled please check portal!")
 
-        client = provider.get_provider(integrator, config_data=paypal_settings.config_data)
+        client = provider.get_provider(integrator, config_data=paypal_settings.config_data,
+                                       user_id=paypal_settings.user_id)
 
     if not client:
         raise HTTPException(status_code=400, detail="Provider name not found")

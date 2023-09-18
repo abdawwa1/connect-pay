@@ -5,8 +5,8 @@ from config import get_settings
 import requests
 import logging
 from src.providers.exceptions import HyperpayException
-from fastapi import HTTPException, Depends
-from sql.hyperpay_crud import create_payment, get_payment, update_payment, hyperpay_config
+from fastapi import HTTPException
+from sql.orms.hyperpay_crud import create_payment, get_payment, update_payment
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
 from sql.models import PaymentStatus
 from sql.settings import SessionLocal
@@ -31,6 +31,7 @@ class HyperPay(BaseProvider):
         self.entity_id = self.config_data.get(f"hyper-pay-{self.validate_card_type(card_type)}-entity-id")
         self.request_log = {}
         self.response_log = {}
+        self.user_id = integrator.get("user_id")
 
     def initiate_payment(self, amount, currency):
         checkouts_api_url = self.base_url + self.CHECKOUTS_ENDPOINT
@@ -153,7 +154,8 @@ class HyperPay(BaseProvider):
                 request=json.dumps(self.request_log, default=str),
                 response=json.dumps(self.response_log, default=str),
                 status=PaymentStatus.PENDING.value,
-                amount=Decimal(self.request_log.get("data").get("amount"))
+                amount=Decimal(self.request_log.get("data").get("amount")),
+                user_id=self.user_id
             )
         )
 

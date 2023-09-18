@@ -24,6 +24,7 @@ class User(Base):
     external_id = Column(String, nullable=False, unique=True)
 
     integrator_config = relationship('IntegratorConfig', back_populates="user")
+    payment = relationship('Payment', back_populates="user")
 
     def __str__(self):
         return self.user_name
@@ -38,6 +39,9 @@ class Payment(Base):
     response = Column(JSON)
     amount = Column(DECIMAL)
     status = Column(Enum(PaymentStatus))
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="payment")
 
 
 class IntegratorConfig(Base):

@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from config import get_settings
 from sql.models import PaymentStatus
-from sql.paypal_crud import create_payment, update_payment, paypal_config
+from sql.orms.paypal_crud import create_payment, update_payment
 from sql.schemas import PaymentCreate, PaymentSuccessUpdate
 from sql.settings import SessionLocal
 from src.providers.base import BaseProvider
@@ -24,6 +24,7 @@ class PayPal(BaseProvider):
         self.access_token = self.get_access_token()
         self.data = {}
         self.response_data = {}
+        self.user_id = integrator.get("user_id")
 
     def initiate_payment(self, amount, currency):
         checkout_url = self.base_url + "/v2/checkout/orders"
@@ -151,7 +152,8 @@ class PayPal(BaseProvider):
                 request=json.dumps(self.data, default=str),
                 response=json.dumps(self.response_data, default=str),
                 status=PaymentStatus.PENDING.value,
-                amount=Decimal(self.data.get("purchase_units")[0].get("amount").get("value"))
+                amount=Decimal(self.data.get("purchase_units")[0].get("amount").get("value")),
+                user_id=self.user_id
             )
         )
 

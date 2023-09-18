@@ -24,6 +24,7 @@ class PaymentCreate(PaymentBase):
     response: Json
     status: PaymentEnum = PaymentEnum.PENDING
     amount: Decimal
+    user_id: int
 
 
 class PaymentSuccessUpdate(PaymentBase):
